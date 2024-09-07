@@ -4,269 +4,269 @@
 
 <body>
     <script>
-         class Elem {
-    static textStyle(message, options) {
-        console.log(`%c ${message}`, `background: ${options.color};color: ${options.textColor ?? '#000000'};font-style: ${options.font};font-size: ${options.size ?? 15}px;`)
-    }
-    static $(query) {
-        if (query.includes('#')) {
-            return document.getElementById(query.replace('#', ''))?.content
-        } else {
-            let arr = []
-            for (let element of document.querySelectorAll(query)) {
-                arr.push(element.content)
+        class Elem {
+            static textStyle(message, options) {
+                console.log(`%c ${message}`, `background: ${options.color};color: ${options.textColor ?? '#000000'};font-style: ${options.font};font-size: ${options.size ?? 15}px;`)
             }
-            return arr
-        }
-    }
-    static tracking = {}
-    static listeners = 0;
-    static warn(message) {
-        if (!Elem.logLevels.warn) {
-            return
-        }
-        Elem.textStyle(`[WARN] ${message}`, { textColor: Colors.yellow, size: 15 })
-    }
-    static error(message) {
-        if (!Elem.logLevels.error) {
-            return
-        }
-        Elem.textStyle(`[ERROR] ${message}`, { textColor: Colors.red, size: 15 })
-    }
-    static findClass(className) {
-        const styleSheets = document.styleSheets;
-        // Loop through each stylesheet
-        for (let i = 0; i < styleSheets.length; i++) {
-            const rules = styleSheets[i].cssRules || styleSheets[i].rules;
-            for (let j = 0; j < rules.length; j++) {
-                if (rules[j].selectorText === `.${className}`) {
-                    return true;
+            static $(query) {
+                if (query.includes('#')) {
+                    return document.getElementById(query.replace('#', ''))?.content
+                } else {
+                    let arr = []
+                    for (let element of document.querySelectorAll(query)) {
+                        arr.push(element.content)
+                    }
+                    return arr
                 }
             }
-        }
-        return false
-    }
-    static info(message) {
-        if (!Elem.logLevels.info) {
-            return
-        }
-        Elem.textStyle(`[INFO] ${message}`, { textColor: '#FFFFFF', size: 10 })
-    }
-    static success(message) {
-        if (!Elem.logLevels.success) {
-            return
-        }
-        Elem.textStyle(`[SUCCESS] ${message}`, { textColor: Colors.lightgreen, size: 15 })
-    }
-    static debug(message) {
-        if (!Elem.logLevels.debug) {
-            return
-        }
-        Elem.textStyle(`[DEBUG] ${message}`, { textColor: Colors.orange, size: 10 })
-    }
-    static messages = {
-        noclass(msg) {
-            Elem.warn(`"${msg}" currently does not exist within the documents Style Sheets`)
-        }
-    }
-    static elements = []
-    static logLevels = {
-        debug: false,
-        warn: false,
-        error: false,
-        info: false,
-        success: false,
-    }
-    static select(identifier) {
-        let element = $search(identifier)
-        Object.setPrototypeOf(element, this.prototype)
-        return element.current
-    }
-    #display;
-    #_label_ = ''
-    #initial
-    constructor(opts, immediate) {
-        if (!opts?.tag) {
-            Elem.error('No tag was provided so i cannot make the new node.')
-            return
-        }
-        if (Elem.logLevels.debug) {
-            let arr = ''
-            for (let [key, value] of Object.entries(opts)) {
-                arr += `${key}="${value}" `.replaceAll('\n', '').replaceAll(' ', '')
-            }
-            Elem.debug(`New <${opts.tag}> element:\n ${arr}`)
-        }
-        if (opts._label_) {
-            if (!(opts._label_ in Elem.tracking)) {
-                this.#_label_ = opts._label_
-                Elem.tracking[this.#_label_] = this
-            } else {
-                Elem.error(`${opts._label_} is already being used as an identifier!`)
-            }
-        }
-        this.eventNames = {}
-        this.content = document.createElement(opts.tag)
-        new.target.elements.push(this)
-        this.content.content = this
-        opts.type && this.content.setAttribute('type', opts.type)
-        opts.for && this.content.setAttribute('for', opts.for)
-        opts.download && this.content.setAttribute('download', opts.download)
-        opts.style && this.content.setAttribute('style', opts.style)
-        opts.value && this.content.setAttribute('value', opts.value)
-        opts.name && this.content.setAttribute('name', opts.name)
-        opts.checked != null && (this.content.checked = opts.checked)
-        opts.src && this.content.setAttribute('src', opts.src)
-        opts.accept && this.content.setAttribute('accept', opts.accept)
-        opts.placeholder && this.content.setAttribute('placeholder', opts.placeholder)
-        this.parent = null
-        this.content.id = opts.id ?? this.content.id
-        opts.width  && this.content.setAttribute('width',opts.width)
-        opts.height && this.content.setAttribute('height',opts.height) 
-        this.content.href = opts.href ?? ''
-        this.content.innerHTML = opts.text ?? ''
-        this.children = []
-        opts.style?.forEach?.(o => this.content.style[o] = opts.style[o])
-        this.#display = this.content.style.display
-        this.#initial = opts
-        if (opts.class) {
-            for (let $class of opts.class) {
-                this.content.classList.add($class)
-            }
-        }
-        if (opts.events) {
-            this.addevent(...opts.events)
-        }
-        if (opts.parent) {
-            this.appendTo(opts.parent)
-        }
-        this.current = this.content
-        if (immediate) {
-            this.appendTo(document.body)
-        }
-        if (opts.children) {
-            for (let kid of opts.children) {
-                kid.appendTo(this.current)
-                this.children.push(kid)
-                kid.parent = this
-            }
-        }
-    }
-    get initial() {
-        return this.#initial
-    }
-    appendTo(parent) {
-        if (typeof parent === 'string') {
-            Elem.$('#' + parent).content.appendChild(this.content)
-            return
-        }
-        try {
-            parent.appendChild(this.content)
-        }
-        catch (e) {
-            parent.content.appendChild(this.content)
-        }
-        if (parent instanceof Elem) {
-            parent.children.push(this)
-            this.parent = parent
-        }
-        return this
-    }
-    appendInto(child) {
-        this.content.appendChild(child.content)
-        this.children.push(child)
-        child.parent = this
-        return this
-    }
-    appendIntoBody() {
-        document.body.appendChild(this.content)
-    }
-    addClass(...className) {
-        this.add({ class: className })
-        return this
-    }
-    add(props) {
-        if (props.class) {
-
-            /*  if (!Array.isArray(props.class)) {
-                  Elem.error(`Expected Array, instead got ${typeof props.class}`)
-              }*/
-            if (typeof props.class === 'string') {
-                props.class = [props.class]
-            }
-            for (let $class of props.class) {
-                if (!Elem.findClass($class)) {
-                    Elem.messages.noclass($class)
-                } else if ([...this.content.classList].includes($class)) {
-                    Elem.warn(`Class ${$class} already added${this.content.id ? ' to ' + this.content.id : ''}`)
+            static tracking = {}
+            static listeners = 0;
+            static warn(message) {
+                if (!Elem.logLevels.warn) {
+                    return
                 }
-                else { Elem.success(`Class ${$class} added${this.content.id ? ' to ' + this.content.id : ''}`) }
-                this.content.classList.add($class)
+                Elem.textStyle(`[WARN] ${message}`, { textColor: Colors.yellow, size: 15 })
+            }
+            static error(message) {
+                if (!Elem.logLevels.error) {
+                    return
+                }
+                Elem.textStyle(`[ERROR] ${message}`, { textColor: Colors.red, size: 15 })
+            }
+            static findClass(className) {
+                const styleSheets = document.styleSheets;
+                // Loop through each stylesheet
+                for (let i = 0; i < styleSheets.length; i++) {
+                    const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+                    for (let j = 0; j < rules.length; j++) {
+                        if (rules[j].selectorText === `.${className}`) {
+                            return true;
+                        }
+                    }
+                }
+                return false
+            }
+            static info(message) {
+                if (!Elem.logLevels.info) {
+                    return
+                }
+                Elem.textStyle(`[INFO] ${message}`, { textColor: '#FFFFFF', size: 10 })
+            }
+            static success(message) {
+                if (!Elem.logLevels.success) {
+                    return
+                }
+                Elem.textStyle(`[SUCCESS] ${message}`, { textColor: Colors.lightgreen, size: 15 })
+            }
+            static debug(message) {
+                if (!Elem.logLevels.debug) {
+                    return
+                }
+                Elem.textStyle(`[DEBUG] ${message}`, { textColor: Colors.orange, size: 10 })
+            }
+            static messages = {
+                noclass(msg) {
+                    Elem.warn(`"${msg}" currently does not exist within the documents Style Sheets`)
+                }
+            }
+            static elements = []
+            static logLevels = {
+                debug: false,
+                warn: false,
+                error: false,
+                info: false,
+                success: false,
+            }
+            static select(identifier) {
+                let element = $search(identifier)
+                Object.setPrototypeOf(element, this.prototype)
+                return element.current
+            }
+            #display;
+            #_label_ = ''
+            #initial
+            constructor(opts, immediate) {
+                if (!opts?.tag) {
+                    Elem.error('No tag was provided so i cannot make the new node.')
+                    return
+                }
+                if (Elem.logLevels.debug) {
+                    let arr = ''
+                    for (let [key, value] of Object.entries(opts)) {
+                        arr += `${key}="${value}" `.replaceAll('\n', '').replaceAll(' ', '')
+                    }
+                    Elem.debug(`New <${opts.tag}> element:\n ${arr}`)
+                }
+                if (opts._label_) {
+                    if (!(opts._label_ in Elem.tracking)) {
+                        this.#_label_ = opts._label_
+                        Elem.tracking[this.#_label_] = this
+                    } else {
+                        Elem.error(`${opts._label_} is already being used as an identifier!`)
+                    }
+                }
+                this.eventNames = {}
+                this.content = document.createElement(opts.tag)
+                new.target.elements.push(this)
+                this.content.content = this
+                opts.type && this.content.setAttribute('type', opts.type)
+                opts.for && this.content.setAttribute('for', opts.for)
+                opts.download && this.content.setAttribute('download', opts.download)
+                opts.style && this.content.setAttribute('style', opts.style)
+                opts.value && this.content.setAttribute('value', opts.value)
+                opts.name && this.content.setAttribute('name', opts.name)
+                opts.checked != null && (this.content.checked = opts.checked)
+                opts.src && this.content.setAttribute('src', opts.src)
+                opts.accept && this.content.setAttribute('accept', opts.accept)
+                opts.placeholder && this.content.setAttribute('placeholder', opts.placeholder)
+                this.parent = null
+                this.content.id = opts.id ?? this.content.id
+                opts.width && this.content.setAttribute('width', opts.width)
+                opts.height && this.content.setAttribute('height', opts.height)
+                this.content.href = opts.href ?? ''
+                this.content.innerHTML = opts.text ?? ''
+                this.children = []
+                opts.style?.forEach?.(o => this.content.style[o] = opts.style[o])
+                this.#display = this.content.style.display
+                this.#initial = opts
+                if (opts.class) {
+                    for (let $class of opts.class) {
+                        this.content.classList.add($class)
+                    }
+                }
+                if (opts.events) {
+                    this.addevent(...opts.events)
+                }
+                if (opts.parent) {
+                    this.appendTo(opts.parent)
+                }
+                this.current = this.content
+                if (immediate) {
+                    this.appendTo(document.body)
+                }
+                if (opts.children) {
+                    for (let kid of opts.children) {
+                        kid.appendTo(this.current)
+                        this.children.push(kid)
+                        kid.parent = this
+                    }
+                }
+            }
+            get initial() {
+                return this.#initial
+            }
+            appendTo(parent) {
+                if (typeof parent === 'string') {
+                    Elem.$('#' + parent).content.appendChild(this.content)
+                    return
+                }
+                try {
+                    parent.appendChild(this.content)
+                }
+                catch (e) {
+                    parent.content.appendChild(this.content)
+                }
+                if (parent instanceof Elem) {
+                    parent.children.push(this)
+                    this.parent = parent
+                }
+                return this
+            }
+            appendInto(child) {
+                this.content.appendChild(child.content)
+                this.children.push(child)
+                child.parent = this
+                return this
+            }
+            appendIntoBody() {
+                document.body.appendChild(this.content)
+            }
+            addClass(...className) {
+                this.add({ class: className })
+                return this
+            }
+            add(props) {
+                if (props.class) {
+
+                    /*  if (!Array.isArray(props.class)) {
+                          Elem.error(`Expected Array, instead got ${typeof props.class}`)
+                      }*/
+                    if (typeof props.class === 'string') {
+                        props.class = [props.class]
+                    }
+                    for (let $class of props.class) {
+                        if (!Elem.findClass($class)) {
+                            Elem.messages.noclass($class)
+                        } else if ([...this.content.classList].includes($class)) {
+                            Elem.warn(`Class ${$class} already added${this.content.id ? ' to ' + this.content.id : ''}`)
+                        }
+                        else { Elem.success(`Class ${$class} added${this.content.id ? ' to ' + this.content.id : ''}`) }
+                        this.content.classList.add($class)
+                    }
+                }
+                return this
+            }
+
+            anim(target, callback) {
+                this.add(target)
+                this.addevent(['animationend', () => { this.noevent('animationend'); callback?.call?.(this.content); }])
+                return this
+            }
+            removeClass(...className) {
+                for (let name of className) {
+                    this.content.classList.remove(name)
+                }
+                return this
+            }
+            addevent(...events) {
+                for (let [eventName, event] of events) {
+                    Elem.listeners++
+                    this.content.addEventListener(eventName, event)
+                    this.eventNames[eventName] = event
+                    Elem.info(`Event "${eventName}" added${this.content.id ? ' to  ' + this.content.id : ''}: \n${event.toString().replaceAll(`\n`, '').replaceAll(' ', '')}`)
+                }
+            }
+            noevent(...target) {
+                for (let event of target) {
+                    this.content.removeEventListener(event, this.eventNames[event])
+                    if (!this.eventNames[event]) {
+                        Elem.warn(`No event found for "${event}"${this.content.id ? ' on ' + this.content.id : ''}`)
+                    } else {
+                        Elem.listeners--
+                        Elem.info(`Removing event "${event}" ${this.content.id ? 'from ' + this.content.id : ''}:\n${this.eventNames[event].toString()}`)
+                    }
+                    delete this.eventNames[event]
+                }
+            }
+            kill() {
+                this.noevent(...Object.keys(this.eventNames))
+                if (this.content.id) {
+                    Elem.info(`Element ${this.content.id} was removed from body`)
+                }
+                Elem.debug(`Element removed`)
+                delete Elem.tracking[this.#_label_]
+                this.killChildren()
+                this?.parent?.children?.deleteWithin?.(this)
+                Elem.elements.deleteWithin(this)
+                this.content.remove()
+                return this
+            }
+            killChildren() {
+                while (this.children.length) {
+                    this.children.forEach(o => o.kill())
+                }
+                return this
+            }
+
+            hide(type) {
+                this.content.style.display = type ?? 'none'
+                return this
+            }
+            show() {
+                this.content.style.display = this.#display
+                return this
             }
         }
-        return this
-    }
-
-    anim(target, callback) {
-        this.add(target)
-        this.addevent(['animationend', () => { this.noevent('animationend'); callback?.call?.(this.content); }])
-        return this
-    }
-    removeClass(...className) {
-        for (let name of className) {
-            this.content.classList.remove(name)
-        }
-        return this
-    }
-    addevent(...events) {
-        for (let [eventName, event] of events) {
-            Elem.listeners++
-            this.content.addEventListener(eventName, event)
-            this.eventNames[eventName] = event
-            Elem.info(`Event "${eventName}" added${this.content.id ? ' to  ' + this.content.id : ''}: \n${event.toString().replaceAll(`\n`, '').replaceAll(' ', '')}`)
-        }
-    }
-    noevent(...target) {
-        for (let event of target) {
-            this.content.removeEventListener(event, this.eventNames[event])
-            if (!this.eventNames[event]) {
-                Elem.warn(`No event found for "${event}"${this.content.id ? ' on ' + this.content.id : ''}`)
-            } else {
-                Elem.listeners--
-                Elem.info(`Removing event "${event}" ${this.content.id ? 'from ' + this.content.id : ''}:\n${this.eventNames[event].toString()}`)
-            }
-            delete this.eventNames[event]
-        }
-    }
-    kill() {
-        this.noevent(...Object.keys(this.eventNames))
-        if (this.content.id) {
-            Elem.info(`Element ${this.content.id} was removed from body`)
-        }
-        Elem.debug(`Element removed`)
-        delete Elem.tracking[this.#_label_]
-        this.killChildren()
-        this?.parent?.children?.deleteWithin?.(this)
-        Elem.elements.deleteWithin(this)
-        this.content.remove()
-        return this
-    }
-    killChildren() {
-        while (this.children.length) {
-            this.children.forEach(o => o.kill())
-        }
-        return this
-    }
-
-    hide(type) {
-        this.content.style.display = type ?? 'none'
-        return this
-    }
-    show() {
-        this.content.style.display = this.#display
-        return this
-    }
-}
         let bar = new Elem({
             tag: 'textarea',
             placeholder: 'input text'
@@ -283,8 +283,8 @@
 
         }, true)
         let saved = new Elem({
-            tag:'p'
-        },true)
+            tag: 'p'
+        }, true)
         let abc = 'abcdefghijklmnopqrstuvwxyz'
         const substitutes = [
             [/\.\.\./g, '…'],
@@ -343,7 +343,7 @@
             [/XX/g, '〷'],
             [/hPa/g, '㍱'],
             [/da/g, '㍲'],
-            [/A\/S/g,'⅍'],
+            [/A\/S/g, '⅍'],
             [/AU/g, '㍳'],
             [/bar/g, '㍴'],
             [/oV/g, '㍵'],
@@ -448,7 +448,7 @@
             [/A\/S/g, '⅍'],
             [/1\/7/g, '⅐'],
             [/1\/9/g, '⅑'],
-            [/1\/2/,'½'],
+            [/1\/2/, '½'],
             [/1\/10/g, '⅒'],
             [/1\/3/g, '⅓'],
             [/2\/3/g, '⅔'],
@@ -468,11 +468,11 @@
             [/Hg/g, '㋌'],
             [/erg/g, '㋍'],
             [/eV/g, '㋎'],
-            [/V\/m/g,'㏞'],
-            [/A\/m/g,'㏟'],
+            [/V\/m/g, '㏞'],
+            [/A\/m/g, '㏟'],
             [/LTD/g, '㋏'],
             [/gal/g, '㏿'],
-         //   [/tr/g, '𝆖'],
+            //   [/tr/g, '𝆖'],
             [/MR/g, '🅬'],
             [/MC/g, '🅪'],
             [/MD/g, '🅫'],
@@ -480,32 +480,33 @@
             [/PA/g, '🆌'],
             [/IC/g, '🆋'],
             [/WC/g, '🆏'],
-            [/3D/g,'🆛'],
-            [/2NDSCR/g,'🆜'],
-            [/2K/g,'🆝'],
-            [/4K/g,'🆞'],
-            [/8K/g,'🆟'],
-            [/5\.1/g,'🆠'],
-            [/7\.1/g,'🆡'],
-            [/22\.2/g,'🆢'],
-            [/60P/g,'🆣'],
-            [/120P/g,'🆤'],
-            [/°C/g,'℃'],
-            [/a\/c/g,'℀'],
-            [/a\/s/g,'℁'],
-            [/c\/o/g,'℅'],
-            [/c\/u/g,'℆'],
-            [/HI-RES/g,'🆨'],
-            [/LOSSLESS/g,'🆩'],
-            [/SHV/g,'🆪'],
-            [/UHD/g,'🆫'],
-            [/HC/g,'🆦'],
-            [/HDR/g,'🆧'],
-            [/VOD/g,'🆬'],
+            [/3D/g, '🆛'],
+            [/2NDSCR/g, '🆜'],
+            [/2K/g, '🆝'],
+            [/4K/g, '🆞'],
+            [/8K/g, '🆟'],
+            [/5\.1/g, '🆠'],
+            [/7\.1/g, '🆡'],
+            [/22\.2/g, '🆢'],
+            [/60P/g, '🆣'],
+            [/120P/g, '🆤'],
+            [/°C/g, '℃'],
+            [/a\/c/g, '℀'],
+            [/a\/s/g, '℁'],
+            [/c\/o/g, '℅'],
+            [/c\/u/g, '℆'],
+            [/HI-RES/g, '🆨'],
+            [/LOSSLESS/g, '🆩'],
+            [/SHV/g, '🆪'],
+            [/UHD/g, '🆫'],
+            [/HC/g, '🆦'],
+            [/HDR/g, '🆧'],
+            [/VOD/g, '🆬'],
             [/\s\s\s/g, '　'],
-                      [/SD/g,'🅌'],
-                   [/SS/g,'🅍'],
-            [/PPV/g,'🅎'],
+            [/SD/g, '🅌'],
+            [/SS/g, '🅍'],
+            [/PPV/g, '🅎'],
+            [/oc/g,'⳪']
 
 
 
@@ -554,12 +555,12 @@
 
         function shortenText() {
             let text = bar.content.value,
-            old = text
+                old = text
             for (let [regex, replacement] of substitutes) {
                 text = text.replace(regex, replacement)
             }
             result.content.value = text
-            saved.content.innerHTML = `Saved ${old.length-text.length} characters!`
+            saved.content.innerHTML = `Saved ${old.length - text.length} characters!`
         }
     </script>
 </body>
